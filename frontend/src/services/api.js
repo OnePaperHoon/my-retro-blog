@@ -138,6 +138,12 @@ export const filesAPI = {
     fetchAPI(`/files/${id}`, {
       method: 'DELETE',
     }),
+
+  move: (id, targetFolderId) =>
+    fetchAPI(`/files/${id}/move`, {
+      method: 'PUT',
+      body: JSON.stringify({ targetFolderId }),
+    }),
 };
 
 // Stats API

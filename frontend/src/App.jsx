@@ -13,6 +13,7 @@ import TaskManager from './components/TaskManager/TaskManager';
 import useWindowManager from './hooks/useWindowManager';
 import useDialog from './hooks/useDialog';
 import soundManager from './utils/sounds';
+import { statsAPI } from './services/api';
 
 // 글로벌 스타일 (동적 배경색 지원)
 const GlobalStyles = createGlobalStyle`
@@ -60,6 +61,18 @@ function App() {
   const handleBootComplete = () => {
     setIsBooting(false);
   };
+
+  // 방문자 통계 기록
+  useEffect(() => {
+    const recordVisit = async () => {
+      try {
+        await statsAPI.recordVisit('/', document.referrer || null);
+      } catch (error) {
+        console.log('Failed to record visit:', error.message);
+      }
+    };
+    recordVisit();
+  }, []);
 
   // Open Task Manager
   const openTaskManager = useCallback(() => {

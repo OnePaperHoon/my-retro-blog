@@ -4,6 +4,9 @@ import Notepad from '../Notepad/Notepad';
 import Calculator from '../Calculator/Calculator';
 import ControlPanel from '../ControlPanel/ControlPanel';
 import Minesweeper from '../Minesweeper/Minesweeper';
+import Browser from '../Browser/Browser';
+import Blog from '../Blog/Blog';
+import Projects from '../Projects/Projects';
 
 const StartMenu = ({ isOpen, onClose, onOpenWindow, onShowShutDown, showMessageBox, showConfirm, showInput, systemSettings, onSystemSettingsChange }) => {
   if (!isOpen) return null;
@@ -15,28 +18,43 @@ const StartMenu = ({ isOpen, onClose, onOpenWindow, onShowShutDown, showMessageB
       icon: '📂',
       submenu: [
         {
-          id: 'about',
-          label: 'About Me',
-          icon: '💻',
-          action: () => onOpenWindow('about', 'About Me', 'OnePaperHoon - Full Stack Developer')
-        },
-        {
-          id: 'projects',
-          label: 'Projects',
-          icon: '📁',
-          action: () => onOpenWindow('projects', 'Projects', 'My Portfolio Projects')
+          id: 'internet',
+          label: 'Internet Explorer',
+          icon: '🌐',
+          action: () => {
+            onOpenWindow(
+              'internet',
+              'Internet Explorer',
+              <Browser showMessageBox={showMessageBox} />,
+              { width: 900, height: 650 }
+            );
+          }
         },
         {
           id: 'blog',
-          label: 'Blog',
+          label: 'My Blog',
           icon: '📝',
-          action: () => onOpenWindow('blog', 'Blog', 'Study Blog & Tech Articles')
+          action: () => {
+            onOpenWindow(
+              'blog',
+              'My Blog',
+              <Blog showMessageBox={showMessageBox} showConfirm={showConfirm} />,
+              { width: 800, height: 600 }
+            );
+          }
         },
         {
-          id: 'resume',
-          label: 'Resume',
-          icon: '📄',
-          action: () => onOpenWindow('resume', 'Resume', 'My Resume / CV')
+          id: 'projects',
+          label: 'My Projects',
+          icon: '💼',
+          action: () => {
+            onOpenWindow(
+              'projects',
+              'My Projects',
+              <Projects showMessageBox={showMessageBox} showConfirm={showConfirm} />,
+              { width: 800, height: 600 }
+            );
+          }
         },
         { separator: true },
         {

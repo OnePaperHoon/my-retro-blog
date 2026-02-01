@@ -16,7 +16,7 @@ export const AuthProvider = ({ children }) => {
           const response = await authAPI.verify();
           if (response.success) {
             setIsAuthenticated(true);
-            setAdmin(response.data);
+            setAdmin(response.admin);
           }
         } catch (error) {
           setAuthToken(null);
@@ -33,7 +33,7 @@ export const AuthProvider = ({ children }) => {
     if (response.success) {
       setAuthToken(response.token);
       setIsAuthenticated(true);
-      setAdmin(response.data);
+      setAdmin(response.admin);
     }
     return response;
   };

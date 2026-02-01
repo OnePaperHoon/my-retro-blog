@@ -4,6 +4,9 @@ import ContextMenu from '../ContextMenu/ContextMenu';
 import useContextMenu from '../../hooks/useContextMenu';
 import Explorer from '../Explorer/Explorer';
 import Notepad from '../Notepad/Notepad';
+import Blog from '../Blog/Blog';
+import Projects from '../Projects/Projects';
+import Browser from '../Browser/Browser';
 import soundManager from '../../utils/sounds';
 
 // Icon grid settings for auto-arrange and line-up
@@ -33,34 +36,34 @@ const Desktop = ({ onOpenWindow, showMessageBox, showConfirm, showInput }) => {
       content: '내 문서 폴더입니다.',
       type: 'folder',
       size: 0,
-      position: { x: 10, y: 120 }
+      position: { x: 10, y: 110 }
+    },
+    {
+      id: 'internet',
+      name: 'Internet Explorer',
+      iconUrl: 'https://win98icons.alexmeub.com/icons/png/msie1-2.png',
+      content: 'Internet Browser',
+      type: 'app',
+      size: 0,
+      position: { x: 10, y: 210 }
     },
     {
       id: 'blog',
-      name: 'Study Blog',
-      iconUrl: 'https://win98icons.alexmeub.com/icons/png/notepad-0.png',
-      content: '오늘의 공부: 리액트로 Windows 98 시뮬레이션 만들기 성공!',
-      type: 'file',
-      size: 1024,
-      position: { x: 10, y: 230 }
+      name: 'My Blog',
+      iconUrl: 'https://win98icons.alexmeub.com/icons/png/html-4.png',
+      content: 'Blog Application',
+      type: 'app',
+      size: 0,
+      position: { x: 10, y: 310 }
     },
     {
       id: 'projects',
-      name: 'Projects',
-      iconUrl: 'https://win98icons.alexmeub.com/icons/png/directory_closed_cool-4.png',
-      content: 'My Portfolio Projects',
-      type: 'folder',
+      name: 'My Projects',
+      iconUrl: 'https://win98icons.alexmeub.com/icons/png/briefcase-0.png',
+      content: 'Portfolio Projects',
+      type: 'app',
       size: 0,
-      position: { x: 10, y: 340 }
-    },
-    {
-      id: 'resume',
-      name: 'Resume',
-      iconUrl: 'https://win98icons.alexmeub.com/icons/png/notepad_file-0.png',
-      content: 'My Resume / CV',
-      type: 'file',
-      size: 2048,
-      position: { x: 10, y: 450 }
+      position: { x: 10, y: 410 }
     },
     {
       id: 'trash',
@@ -69,7 +72,7 @@ const Desktop = ({ onOpenWindow, showMessageBox, showConfirm, showInput }) => {
       content: '비어 있음',
       type: 'system',
       size: 0,
-      position: { x: 10, y: 560 }
+      position: { x: 10, y: 510 }
     }
   ]);
 
@@ -258,31 +261,70 @@ const Desktop = ({ onOpenWindow, showMessageBox, showConfirm, showInput }) => {
       );
     };
 
-    if (icon.id === 'projects' || icon.id === 'computer') {
-      // Explorer로 열기
+    if (icon.id === 'computer') {
+      // My Computer - Explorer 루트에서 열기
+      soundManager.windowOpen();
       onOpenWindow(
-        icon.id,
+        'explorer-computer-' + Date.now(),
         icon.name,
         <Explorer
+          initialPath="C:"
           onOpenFile={handleOpenFile}
           showMessageBox={showMessageBox}
           showConfirm={showConfirm}
           showInput={showInput}
-        />
+        />,
+        { width: 750, height: 500 }
       );
-    } else if (icon.id === 'blog') {
-      // Blog는 Notepad로 직접 열기
+    } else if (icon.id === 'documents') {
+      // My Documents - 문서 폴더에서 열기
+      soundManager.windowOpen();
       onOpenWindow(
-        icon.id,
-        `${icon.name} - Notepad`,
-        <Notepad
-          initialContent={icon.content || 'Start writing your blog post...'}
-          fileName={icon.name}
+        'explorer-documents-' + Date.now(),
+        icon.name,
+        <Explorer
+          initialPath="C:\\My Documents"
+          onOpenFile={handleOpenFile}
           showMessageBox={showMessageBox}
           showConfirm={showConfirm}
           showInput={showInput}
         />,
-        { width: 600, height: 500 }
+        { width: 750, height: 500 }
+      );
+    } else if (icon.id === 'projects') {
+      // Projects 애플리케이션 열기
+      soundManager.windowOpen();
+      onOpenWindow(
+        icon.id,
+        icon.name,
+        <Projects
+          showMessageBox={showMessageBox}
+          showConfirm={showConfirm}
+        />,
+        { width: 800, height: 600 }
+      );
+    } else if (icon.id === 'internet') {
+      // Internet Explorer 열기
+      soundManager.windowOpen();
+      onOpenWindow(
+        icon.id,
+        'Internet Explorer',
+        <Browser
+          showMessageBox={showMessageBox}
+        />,
+        { width: 900, height: 650 }
+      );
+    } else if (icon.id === 'blog') {
+      // Blog 애플리케이션 열기
+      soundManager.windowOpen();
+      onOpenWindow(
+        icon.id,
+        icon.name,
+        <Blog
+          showMessageBox={showMessageBox}
+          showConfirm={showConfirm}
+        />,
+        { width: 800, height: 600 }
       );
     } else {
       onOpenWindow(icon.id, icon.name, icon.content);

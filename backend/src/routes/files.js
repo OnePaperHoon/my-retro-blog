@@ -164,6 +164,63 @@ router.put('/:id', protect, async (req, res) => {
   }
 });
 
+// PUT /api/files/:id/move - Move file/folder to another folder (protected)
+router.put('/:id/move', protect, async (req, res) => {
+  try {
+    const { targetFolderId } = req.body;
+    const file = await File.findById(req.params.id);
+
+    if (!file) {
+      return res.status(404).json({
+        success: false,
+        message: 'File not found'
+      });
+    }
+
+    // Determine new path
+    let newPath = '/';
+    if (targetFolderId) {
+      const targetFolder = await File.findById(targetFolderId);
+      if (!targetFolder || targetFolder.type !== 'folder') {
+        return res.status(400).json({
+          success: false,
+          message: 'Target must be a folder'
+        });
+      }
+      newPath = `${targetFolder.path}${targetFolder.name}/`;
+    }
+
+    // Update path for the file
+    const oldPath = file.path;
+    file.parentId = targetFolderId || null;
+    file.path = newPath;
+    await file.save();
+
+    // If it's a folder, update all children paths
+    if (file.type === 'folder') {
+      const oldChildPath = `${oldPath}${file.name}/`;
+      const newChildPath = `${newPath}${file.name}/`;
+
+      const children = await File.find({ path: { $regex: `^${oldChildPath}` } });
+      for (const child of children) {
+        child.path = child.path.replace(oldChildPath, newChildPath);
+        await child.save();
+      }
+    }
+
+    res.json({
+      success: true,
+      data: file
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: 'Server error',
+      error: error.message
+    });
+  }
+});
+
 // DELETE /api/files/:id - Delete file/folder (protected)
 router.delete('/:id', protect, async (req, res) => {
   try {
