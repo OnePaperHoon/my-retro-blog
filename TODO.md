@@ -244,63 +244,65 @@
 - **프레임워크**: Express.js
 - **데이터베이스**: MongoDB
 - **인증**: JWT (관리자 전용)
+- **구조**: Monorepo (frontend/ + backend/)
 
-### 백엔드 기본 구조
-- [ ] Express 프로젝트 초기화
-- [ ] MongoDB 연결 설정
-- [ ] 환경변수 설정 (.env)
-- [ ] CORS 설정
-- [ ] 에러 핸들링 미들웨어
+### 백엔드 기본 구조 ✅
+- [x] Express 프로젝트 초기화
+- [x] MongoDB 연결 설정
+- [x] 환경변수 설정 (.env)
+- [x] CORS 설정
+- [x] 에러 핸들링 미들웨어
 
-### 인증 시스템
-- [ ] Admin 모델 (username, password hash)
-- [ ] 로그인 API (POST /api/auth/login)
-- [ ] JWT 발급 및 검증
-- [ ] 인증 미들웨어 (protected routes)
-- [ ] 토큰 갱신 로직
+### 인증 시스템 ✅
+- [x] Admin 모델 (username, password hash)
+- [x] 로그인 API (POST /api/auth/login)
+- [x] JWT 발급 및 검증
+- [x] 인증 미들웨어 (protected routes)
+- [x] 초기 관리자 설정 API (POST /api/auth/setup)
 
-### 블로그 시스템
-- [ ] Post 모델 (title, content, category, tags, createdAt, updatedAt, views)
-- [ ] 글 목록 조회 (GET /api/posts)
-- [ ] 글 상세 조회 (GET /api/posts/:id)
-- [ ] 글 작성 (POST /api/posts) [인증 필요]
-- [ ] 글 수정 (PUT /api/posts/:id) [인증 필요]
-- [ ] 글 삭제 (DELETE /api/posts/:id) [인증 필요]
-- [ ] 마크다운 지원
-- [ ] 카테고리/태그 필터링
+### 블로그 시스템 ✅
+- [x] Post 모델 (title, content, category, tags, createdAt, updatedAt, views)
+- [x] 글 목록 조회 (GET /api/posts)
+- [x] 글 상세 조회 (GET /api/posts/:id)
+- [x] 글 작성 (POST /api/posts) [인증 필요]
+- [x] 글 수정 (PUT /api/posts/:id) [인증 필요]
+- [x] 글 삭제 (DELETE /api/posts/:id) [인증 필요]
+- [x] 마크다운 지원 (프론트엔드 react-markdown)
+- [x] 카테고리/태그 필터링
 
-### 포트폴리오 시스템
-- [ ] Project 모델 (title, description, techStack, imageUrl, githubUrl, demoUrl, createdAt)
-- [ ] 프로젝트 목록 조회 (GET /api/projects)
-- [ ] 프로젝트 추가 (POST /api/projects) [인증 필요]
-- [ ] 프로젝트 수정 (PUT /api/projects/:id) [인증 필요]
-- [ ] 프로젝트 삭제 (DELETE /api/projects/:id) [인증 필요]
+### 포트폴리오 시스템 ✅
+- [x] Project 모델 (title, description, techStack, imageUrl, githubUrl, demoUrl, createdAt)
+- [x] 프로젝트 목록 조회 (GET /api/projects)
+- [x] 프로젝트 추가 (POST /api/projects) [인증 필요]
+- [x] 프로젝트 수정 (PUT /api/projects/:id) [인증 필요]
+- [x] 프로젝트 삭제 (DELETE /api/projects/:id) [인증 필요]
 - [ ] 이미지 업로드 (Cloudinary 또는 S3)
 
-### 가상 파일 시스템
-- [ ] File 모델 (name, type, content, parentId, createdAt, updatedAt)
-- [ ] 파일/폴더 트리 조회 (GET /api/files)
-- [ ] 파일/폴더 생성 (POST /api/files) [인증 필요]
-- [ ] 파일/폴더 수정 (PUT /api/files/:id) [인증 필요]
-- [ ] 파일/폴더 삭제 (DELETE /api/files/:id) [인증 필요]
-- [ ] 폴더 내 파일 조회
+### 가상 파일 시스템 ✅
+- [x] File 모델 (name, type, content, parentId, createdAt, updatedAt)
+- [x] 파일/폴더 트리 조회 (GET /api/files/tree)
+- [x] 파일/폴더 생성 (POST /api/files) [인증 필요]
+- [x] 파일/폴더 수정 (PUT /api/files/:id) [인증 필요]
+- [x] 파일/폴더 삭제 (DELETE /api/files/:id) [인증 필요]
+- [x] 폴더 내 파일 조회
 
-### 방문자 통계
-- [ ] Visitor 모델 (ip, userAgent, page, timestamp)
-- [ ] 방문 기록 저장 (POST /api/stats/visit)
-- [ ] 통계 조회 (GET /api/stats) [인증 필요]
-  - [ ] 일별/주별/월별 방문자 수
-  - [ ] 페이지별 조회수
-  - [ ] 총 방문자 수
+### 방문자 통계 ✅
+- [x] Visitor 모델 (ip, userAgent, page, timestamp)
+- [x] 방문 기록 저장 (POST /api/stats/visit)
+- [x] 통계 조회 (GET /api/stats) [인증 필요]
+  - [x] 일별/주별/월별 방문자 수
+  - [x] 페이지별 조회수
+  - [x] 총 방문자 수
 
-### 시스템 설정
-- [ ] Settings 모델 (backgroundColor, iconPositions, etc.)
-- [ ] 설정 조회 (GET /api/settings)
-- [ ] 설정 저장 (PUT /api/settings) [인증 필요]
+### 시스템 설정 ✅
+- [x] Settings 모델 (key-value 저장)
+- [x] 설정 조회 (GET /api/settings)
+- [x] 설정 저장 (PUT /api/settings) [인증 필요]
 
 ### 프론트엔드 연동
-- [ ] API 서비스 레이어 생성 (src/services/api.js)
-- [ ] 환경변수로 API URL 관리
+- [x] API 서비스 레이어 생성 (src/services/api.js)
+- [x] 환경변수로 API URL 관리
+- [x] AuthContext 인증 상태 관리
 - [ ] 로그인 페이지/모달
 - [ ] 관리자 모드 UI (글 작성, 프로젝트 추가 등)
 - [ ] 기존 하드코딩 데이터 → API 호출로 변경
