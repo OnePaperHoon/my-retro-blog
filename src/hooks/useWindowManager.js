@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import soundManager from '../utils/sounds';
 
 const useWindowManager = () => {
   const [windows, setWindows] = useState([]);
@@ -37,6 +38,7 @@ const useWindowManager = () => {
 
     setWindows([...windows, newWindow]);
     setFocusedWindow(id);
+    soundManager.windowOpen();
   };
 
   // 창 닫기

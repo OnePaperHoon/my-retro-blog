@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import soundManager from '../../utils/sounds';
 
 const BootScreen = ({ onBootComplete }) => {
   const [stage, setStage] = useState(0); // 0: BIOS, 1: Windows Logo, 2: Complete
@@ -32,6 +33,9 @@ const BootScreen = ({ onBootComplete }) => {
       if (currentStep >= bootSequence.length) {
         setTimeout(() => {
           setStage(2);
+          // Initialize and play startup sound
+          soundManager.init();
+          soundManager.startup();
           onBootComplete();
         }, 300);
         return;

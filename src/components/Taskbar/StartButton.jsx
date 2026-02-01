@@ -1,9 +1,15 @@
 import { Button } from 'react95';
+import soundManager from '../../utils/sounds';
 
 const StartButton = ({ isActive, onClick }) => {
+  const handleClick = () => {
+    soundManager.menuOpen();
+    onClick();
+  };
+
   return (
     <Button
-      onClick={onClick}
+      onClick={handleClick}
       active={isActive}
       style={{ fontWeight: 'bold' }}
     >

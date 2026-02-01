@@ -1,4 +1,5 @@
 import { WindowHeader, Button } from 'react95';
+import soundManager from '../../utils/sounds';
 
 const TitleBar = ({ title, isFocused, onMinimize, onMaximize, onClose, isMaximized }) => {
   return (
@@ -19,6 +20,7 @@ const TitleBar = ({ title, isFocused, onMinimize, onMaximize, onClose, isMaximiz
           square
           onClick={(e) => {
             e.stopPropagation();
+            soundManager.minimize();
             onMinimize();
           }}
           style={{ width: '18px', height: '18px', padding: 0, fontSize: '10px' }}
@@ -30,6 +32,7 @@ const TitleBar = ({ title, isFocused, onMinimize, onMaximize, onClose, isMaximiz
           square
           onClick={(e) => {
             e.stopPropagation();
+            soundManager.maximize();
             onMaximize();
           }}
           style={{ width: '18px', height: '18px', padding: 0, fontSize: '10px' }}
@@ -41,6 +44,7 @@ const TitleBar = ({ title, isFocused, onMinimize, onMaximize, onClose, isMaximiz
           square
           onClick={(e) => {
             e.stopPropagation();
+            soundManager.windowClose();
             onClose();
           }}
           style={{ width: '18px', height: '18px', padding: 0, fontSize: '10px' }}

@@ -1,10 +1,16 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Dialog from './Dialog';
+import soundManager from '../../utils/sounds';
 
 const ShutDownDialog = ({ onClose }) => {
   const [selectedOption, setSelectedOption] = useState('shutdown');
 
+  useEffect(() => {
+    soundManager.question();
+  }, []);
+
   const handleOk = () => {
+    soundManager.shutdown();
     if (selectedOption === 'shutdown') {
       // 실제로는 화면을 검은색으로 만들거나 종료 화면 표시
       alert('💻 System is shutting down...\n\nThank you for visiting OnePaperHoon.com!');

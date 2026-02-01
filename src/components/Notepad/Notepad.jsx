@@ -1,5 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { MenuList, MenuListItem, Separator } from 'react95';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 
 const Notepad = ({
   initialContent = '',
@@ -12,6 +14,7 @@ const Notepad = ({
   const [content, setContent] = useState(initialContent);
   const [wordWrap, setWordWrap] = useState(true);
   const [showStatusBar, setShowStatusBar] = useState(true);
+  const [previewMode, setPreviewMode] = useState(false);
   const [cursorPosition, setCursorPosition] = useState({ line: 1, col: 1 });
   const [isModified, setIsModified] = useState(false);
   const [activeMenu, setActiveMenu] = useState(null);
@@ -141,6 +144,12 @@ const Notepad = ({
     ],
     View: [
       {
+        label: previewMode ? '✓ Markdown Preview' : 'Markdown Preview',
+        shortcut: 'Ctrl+M',
+        action: () => setPreviewMode(!previewMode)
+      },
+      { separator: true },
+      {
         label: showStatusBar ? '✓ Status Bar' : 'Status Bar',
         action: () => setShowStatusBar(!showStatusBar)
       }
@@ -176,6 +185,9 @@ const Notepad = ({
         } else if (e.key === 'f') {
           e.preventDefault();
           handleFind();
+        } else if (e.key === 'm') {
+          e.preventDefault();
+          setPreviewMode(prev => !prev);
         }
       }
     };
@@ -251,28 +263,70 @@ const Notepad = ({
         ))}
       </div>
 
-      {/* 텍스트 편집 영역 */}
-      <textarea
-        ref={textareaRef}
-        value={content}
-        onChange={handleTextChange}
-        onClick={handleClick}
-        onKeyUp={handleKeyUp}
-        spellCheck={false}
-        style={{
-          flex: 1,
-          padding: '8px',
-          border: 'none',
-          outline: 'none',
-          resize: 'none',
-          fontFamily: 'Consolas, "Courier New", monospace',
-          fontSize: '13px',
-          lineHeight: '1.4',
-          whiteSpace: wordWrap ? 'pre-wrap' : 'pre',
-          overflowWrap: wordWrap ? 'break-word' : 'normal',
-          overflowX: wordWrap ? 'hidden' : 'auto'
-        }}
-      />
+      {/* 텍스트 편집 영역 / 마크다운 미리보기 */}
+      {previewMode ? (
+        <div
+          style={{
+            flex: 1,
+            padding: '12px 16px',
+            overflow: 'auto',
+            backgroundColor: '#fff',
+            fontFamily: 'Arial, sans-serif',
+            fontSize: '14px',
+            lineHeight: '1.6'
+          }}
+          className="markdown-preview"
+        >
+          <ReactMarkdown
+            remarkPlugins={[remarkGfm]}
+            components={{
+              h1: ({node, ...props}) => <h1 style={{fontSize: '24px', borderBottom: '1px solid #eee', paddingBottom: '8px', marginBottom: '16px'}} {...props} />,
+              h2: ({node, ...props}) => <h2 style={{fontSize: '20px', borderBottom: '1px solid #eee', paddingBottom: '6px', marginBottom: '12px'}} {...props} />,
+              h3: ({node, ...props}) => <h3 style={{fontSize: '16px', marginBottom: '8px'}} {...props} />,
+              p: ({node, ...props}) => <p style={{marginBottom: '12px'}} {...props} />,
+              ul: ({node, ...props}) => <ul style={{marginBottom: '12px', paddingLeft: '24px'}} {...props} />,
+              ol: ({node, ...props}) => <ol style={{marginBottom: '12px', paddingLeft: '24px'}} {...props} />,
+              li: ({node, ...props}) => <li style={{marginBottom: '4px'}} {...props} />,
+              code: ({node, inline, ...props}) =>
+                inline
+                  ? <code style={{backgroundColor: '#f0f0f0', padding: '2px 6px', borderRadius: '3px', fontFamily: 'Consolas, monospace', fontSize: '13px'}} {...props} />
+                  : <code style={{display: 'block', backgroundColor: '#1e1e1e', color: '#d4d4d4', padding: '12px', borderRadius: '4px', fontFamily: 'Consolas, monospace', fontSize: '13px', overflow: 'auto', marginBottom: '12px'}} {...props} />,
+              pre: ({node, ...props}) => <pre style={{margin: 0}} {...props} />,
+              blockquote: ({node, ...props}) => <blockquote style={{borderLeft: '4px solid #ddd', margin: '0 0 12px 0', padding: '8px 16px', backgroundColor: '#f9f9f9'}} {...props} />,
+              a: ({node, ...props}) => <a style={{color: '#0066cc'}} {...props} />,
+              table: ({node, ...props}) => <table style={{borderCollapse: 'collapse', marginBottom: '12px', width: '100%'}} {...props} />,
+              th: ({node, ...props}) => <th style={{border: '1px solid #ddd', padding: '8px', backgroundColor: '#f0f0f0', textAlign: 'left'}} {...props} />,
+              td: ({node, ...props}) => <td style={{border: '1px solid #ddd', padding: '8px'}} {...props} />,
+              hr: ({node, ...props}) => <hr style={{border: 'none', borderTop: '1px solid #ddd', margin: '16px 0'}} {...props} />,
+              img: ({node, ...props}) => <img style={{maxWidth: '100%', height: 'auto'}} {...props} />
+            }}
+          >
+            {content || '*No content to preview*'}
+          </ReactMarkdown>
+        </div>
+      ) : (
+        <textarea
+          ref={textareaRef}
+          value={content}
+          onChange={handleTextChange}
+          onClick={handleClick}
+          onKeyUp={handleKeyUp}
+          spellCheck={false}
+          style={{
+            flex: 1,
+            padding: '8px',
+            border: 'none',
+            outline: 'none',
+            resize: 'none',
+            fontFamily: 'Consolas, "Courier New", monospace',
+            fontSize: '13px',
+            lineHeight: '1.4',
+            whiteSpace: wordWrap ? 'pre-wrap' : 'pre',
+            overflowWrap: wordWrap ? 'break-word' : 'normal',
+            overflowX: wordWrap ? 'hidden' : 'auto'
+          }}
+        />
+      )}
 
       {/* 상태 표시줄 */}
       {showStatusBar && (
@@ -284,8 +338,12 @@ const Notepad = ({
           display: 'flex',
           justifyContent: 'space-between'
         }}>
-          <span>{isModified ? 'Modified' : 'Saved'}</span>
-          <span>Ln {cursorPosition.line}, Col {cursorPosition.col}</span>
+          <span>
+            {previewMode ? '📖 Preview Mode' : (isModified ? 'Modified' : 'Saved')}
+          </span>
+          <span>
+            {previewMode ? 'Ctrl+M to edit' : `Ln ${cursorPosition.line}, Col ${cursorPosition.col}`}
+          </span>
         </div>
       )}
     </div>

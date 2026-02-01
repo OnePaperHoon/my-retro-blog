@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { createGlobalStyle, ThemeProvider } from 'styled-components';
 import original from 'react95/dist/themes/original';
 
@@ -9,13 +9,15 @@ import Window from './components/Window/Window';
 import ShutDownDialog from './components/Dialog/ShutDownDialog';
 import DialogManager from './components/Dialog/DialogManager';
 import Notepad from './components/Notepad/Notepad';
+import TaskManager from './components/TaskManager/TaskManager';
 import useWindowManager from './hooks/useWindowManager';
 import useDialog from './hooks/useDialog';
+import soundManager from './utils/sounds';
 
-// 글로벌 스타일
+// 글로벌 스타일 (동적 배경색 지원)
 const GlobalStyles = createGlobalStyle`
   body {
-    background-color: #008080;
+    background-color: ${props => props.$backgroundColor || '#008080'};
     margin: 0;
     padding: 0;
     overflow: hidden;
@@ -30,6 +32,11 @@ const GlobalStyles = createGlobalStyle`
 function App() {
   const [isBooting, setIsBooting] = useState(true);
   const [showShutDownDialog, setShowShutDownDialog] = useState(false);
+  const [systemSettings, setSystemSettings] = useState({
+    backgroundColor: '#008080',
+    soundMuted: false,
+    soundVolume: 50
+  });
 
   const {
     windows,
@@ -54,10 +61,38 @@ function App() {
     setIsBooting(false);
   };
 
+  // Open Task Manager
+  const openTaskManager = useCallback(() => {
+    soundManager.windowOpen();
+    openWindow(
+      'task-manager',
+      'Windows Task Manager',
+      <TaskManager
+        windows={windows}
+        onCloseWindow={closeWindow}
+        onFocusWindow={focusWindow}
+      />,
+      { width: 400, height: 350 }
+    );
+  }, [openWindow, windows, closeWindow, focusWindow]);
+
+  // Ctrl+Alt+Delete handler
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.ctrlKey && e.altKey && e.key === 'Delete') {
+        e.preventDefault();
+        openTaskManager();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [openTaskManager]);
+
   if (isBooting) {
     return (
       <ThemeProvider theme={original}>
-        <GlobalStyles />
+        <GlobalStyles $backgroundColor={systemSettings.backgroundColor} />
         <BootScreen onBootComplete={handleBootComplete} />
       </ThemeProvider>
     );
@@ -65,7 +100,7 @@ function App() {
 
   return (
     <ThemeProvider theme={original}>
-      <GlobalStyles />
+      <GlobalStyles $backgroundColor={systemSettings.backgroundColor} />
 
       {/* 바탕화면 */}
       <Desktop
@@ -100,6 +135,8 @@ function App() {
         showMessageBox={showMessageBox}
         showConfirm={showConfirm}
         showInput={showInput}
+        systemSettings={systemSettings}
+        onSystemSettingsChange={setSystemSettings}
       />
 
       {/* Shut Down 다이얼로그 */}

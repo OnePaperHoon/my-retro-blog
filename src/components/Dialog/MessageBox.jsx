@@ -1,4 +1,6 @@
+import { useEffect } from 'react';
 import Dialog from './Dialog';
+import soundManager from '../../utils/sounds';
 
 const MessageBox = ({
   title = 'Message',
@@ -6,6 +8,23 @@ const MessageBox = ({
   type = 'info', // 'info', 'warning', 'error', 'question'
   onClose
 }) => {
+  // Play sound based on type when dialog opens
+  useEffect(() => {
+    switch (type) {
+      case 'error':
+        soundManager.error();
+        break;
+      case 'warning':
+        soundManager.warning();
+        break;
+      case 'question':
+        soundManager.question();
+        break;
+      default:
+        soundManager.notification();
+    }
+  }, [type]);
+
   const icons = {
     info: 'ℹ️',
     warning: '⚠️',

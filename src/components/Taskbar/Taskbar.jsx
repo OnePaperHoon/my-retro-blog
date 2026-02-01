@@ -7,7 +7,7 @@ import ContextMenu from '../ContextMenu/ContextMenu';
 import Notepad from '../Notepad/Notepad';
 import useContextMenu from '../../hooks/useContextMenu';
 
-const Taskbar = ({ windows, focusedWindow, onFocusWindow, onRestoreWindow, onOpenWindow, onShowShutDown, showMessageBox, showConfirm, showInput }) => {
+const Taskbar = ({ windows, focusedWindow, onFocusWindow, onRestoreWindow, onOpenWindow, onShowShutDown, showMessageBox, showConfirm, showInput, systemSettings, onSystemSettingsChange }) => {
   const [isStartOpen, setIsStartOpen] = useState(false);
   const { contextMenu, showContextMenu, hideContextMenu } = useContextMenu();
 
@@ -94,6 +94,8 @@ const Taskbar = ({ windows, focusedWindow, onFocusWindow, onRestoreWindow, onOpe
             showMessageBox={showMessageBox}
             showConfirm={showConfirm}
             showInput={showInput}
+            systemSettings={systemSettings}
+            onSystemSettingsChange={onSystemSettingsChange}
           />
         </div>
 

@@ -1,5 +1,6 @@
 import { useState, useRef } from 'react';
 import Draggable from 'react-draggable';
+import soundManager from '../../utils/sounds';
 
 const DesktopIcon = ({ name, iconUrl, onDoubleClick, selected, onSelect, onContextMenu, position, onDrag }) => {
   const [isHovered, setIsHovered] = useState(false);
@@ -26,6 +27,7 @@ const DesktopIcon = ({ name, iconUrl, onDoubleClick, selected, onSelect, onConte
         ref={nodeRef}
         onClick={(e) => {
           e.stopPropagation();
+          soundManager.select();
           onSelect();
         }}
         onDoubleClick={(e) => {

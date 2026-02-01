@@ -1,8 +1,11 @@
 import { MenuList } from 'react95';
 import MenuItem from './MenuItem';
 import Notepad from '../Notepad/Notepad';
+import Calculator from '../Calculator/Calculator';
+import ControlPanel from '../ControlPanel/ControlPanel';
+import Minesweeper from '../Minesweeper/Minesweeper';
 
-const StartMenu = ({ isOpen, onClose, onOpenWindow, onShowShutDown, showMessageBox, showConfirm, showInput }) => {
+const StartMenu = ({ isOpen, onClose, onOpenWindow, onShowShutDown, showMessageBox, showConfirm, showInput, systemSettings, onSystemSettingsChange }) => {
   if (!isOpen) return null;
 
   const menuItems = [
@@ -37,6 +40,26 @@ const StartMenu = ({ isOpen, onClose, onOpenWindow, onShowShutDown, showMessageB
         },
         { separator: true },
         {
+          id: 'games',
+          label: 'Games',
+          icon: '🎮',
+          submenu: [
+            {
+              id: 'minesweeper',
+              label: 'Minesweeper',
+              icon: '💣',
+              action: () => {
+                onOpenWindow(
+                  'minesweeper',
+                  'Minesweeper',
+                  <Minesweeper />,
+                  { width: 300, height: 380 }
+                );
+              }
+            }
+          ]
+        },
+        {
           id: 'accessories',
           label: 'Accessories',
           icon: '🔧',
@@ -58,7 +81,19 @@ const StartMenu = ({ isOpen, onClose, onOpenWindow, onShowShutDown, showMessageB
                 );
               }
             },
-            { id: 'calculator', label: 'Calculator', icon: '🔢', disabled: true }
+            {
+              id: 'calculator',
+              label: 'Calculator',
+              icon: '🔢',
+              action: () => {
+                onOpenWindow(
+                  'calculator-' + Date.now(),
+                  'Calculator',
+                  <Calculator />,
+                  { width: 240, height: 320 }
+                );
+              }
+            }
           ]
         }
       ]
@@ -73,7 +108,24 @@ const StartMenu = ({ isOpen, onClose, onOpenWindow, onShowShutDown, showMessageB
       id: 'settings',
       label: 'Settings',
       icon: '⚙️',
-      disabled: true
+      submenu: [
+        {
+          id: 'control-panel',
+          label: 'Control Panel',
+          icon: '🛠️',
+          action: () => {
+            onOpenWindow(
+              'control-panel',
+              'Control Panel',
+              <ControlPanel
+                settings={systemSettings}
+                onSettingsChange={onSystemSettingsChange}
+              />,
+              { width: 400, height: 300 }
+            );
+          }
+        }
+      ]
     },
     {
       id: 'find',
@@ -122,7 +174,6 @@ const StartMenu = ({ isOpen, onClose, onOpenWindow, onShowShutDown, showMessageB
         zIndex: '9999',
         minWidth: '200px'
       }}
-      onClick={onClose}
     >
       <div
         style={{
@@ -142,6 +193,7 @@ const StartMenu = ({ isOpen, onClose, onOpenWindow, onShowShutDown, showMessageB
           item={item}
           onClick={() => handleMenuClick(item)}
           hasSubmenu={item.submenu && item.submenu.length > 0}
+          onSubmenuAction={onClose}
         />
       ))}
     </MenuList>
