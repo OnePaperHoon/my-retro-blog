@@ -1,7 +1,10 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import { MenuList, MenuListItem, Separator } from 'react95';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
+
+const NOTEPAD_STORAGE_KEY = 'notepad_files';
+const MAX_UNDO_HISTORY = 50;
 
 const Notepad = ({
   initialContent = '',
@@ -12,6 +15,7 @@ const Notepad = ({
   onClose
 }) => {
   const [content, setContent] = useState(initialContent);
+  const [currentFileName, setCurrentFileName] = useState(fileName);
   const [wordWrap, setWordWrap] = useState(true);
   const [showStatusBar, setShowStatusBar] = useState(true);
   const [previewMode, setPreviewMode] = useState(false);
@@ -20,15 +24,43 @@ const Notepad = ({
   const [activeMenu, setActiveMenu] = useState(null);
   const textareaRef = useRef(null);
 
+  // Undo/Redo 히스토리
+  const [undoHistory, setUndoHistory] = useState([initialContent]);
+  const [historyIndex, setHistoryIndex] = useState(0);
+
+  // 찾기/바꾸기 상태
+  const [lastSearchText, setLastSearchText] = useState('');
+  const [lastSearchIndex, setLastSearchIndex] = useState(-1);
+
+  // 글꼴 설정
+  const [fontSize, setFontSize] = useState(13);
+  const [fontFamily, setFontFamily] = useState('Consolas, "Courier New", monospace');
+
   useEffect(() => {
     if (textareaRef.current) {
       textareaRef.current.focus();
     }
   }, []);
 
+  // 히스토리에 현재 상태 추가
+  const addToHistory = useCallback((newContent) => {
+    setUndoHistory(prev => {
+      const newHistory = prev.slice(0, historyIndex + 1);
+      newHistory.push(newContent);
+      if (newHistory.length > MAX_UNDO_HISTORY) {
+        newHistory.shift();
+        return newHistory;
+      }
+      return newHistory;
+    });
+    setHistoryIndex(prev => Math.min(prev + 1, MAX_UNDO_HISTORY - 1));
+  }, [historyIndex]);
+
   const handleTextChange = (e) => {
-    setContent(e.target.value);
+    const newContent = e.target.value;
+    setContent(newContent);
     setIsModified(true);
+    addToHistory(newContent);
     updateCursorPosition(e.target);
   };
 
@@ -42,79 +74,340 @@ const Notepad = ({
 
   const handleClick = (e) => {
     updateCursorPosition(e.target);
+    setActiveMenu(null);
   };
 
   const handleKeyUp = (e) => {
     updateCursorPosition(e.target);
   };
 
+  // Undo
+  const handleUndo = useCallback(() => {
+    if (historyIndex > 0) {
+      const newIndex = historyIndex - 1;
+      setHistoryIndex(newIndex);
+      setContent(undoHistory[newIndex]);
+      setIsModified(true);
+    }
+  }, [historyIndex, undoHistory]);
+
+  // Redo
+  const handleRedo = useCallback(() => {
+    if (historyIndex < undoHistory.length - 1) {
+      const newIndex = historyIndex + 1;
+      setHistoryIndex(newIndex);
+      setContent(undoHistory[newIndex]);
+      setIsModified(true);
+    }
+  }, [historyIndex, undoHistory]);
+
+  // Cut
+  const handleCut = useCallback(() => {
+    const textarea = textareaRef.current;
+    if (!textarea) return;
+
+    const start = textarea.selectionStart;
+    const end = textarea.selectionEnd;
+    if (start === end) return;
+
+    const selectedText = content.substring(start, end);
+    navigator.clipboard.writeText(selectedText);
+
+    const newContent = content.substring(0, start) + content.substring(end);
+    setContent(newContent);
+    addToHistory(newContent);
+    setIsModified(true);
+
+    setTimeout(() => {
+      textarea.setSelectionRange(start, start);
+      textarea.focus();
+    }, 0);
+  }, [content, addToHistory]);
+
+  // Copy
+  const handleCopy = useCallback(() => {
+    const textarea = textareaRef.current;
+    if (!textarea) return;
+
+    const start = textarea.selectionStart;
+    const end = textarea.selectionEnd;
+    if (start === end) return;
+
+    const selectedText = content.substring(start, end);
+    navigator.clipboard.writeText(selectedText);
+  }, [content]);
+
+  // Paste
+  const handlePaste = useCallback(async () => {
+    try {
+      const clipboardText = await navigator.clipboard.readText();
+      const textarea = textareaRef.current;
+      if (!textarea) return;
+
+      const start = textarea.selectionStart;
+      const end = textarea.selectionEnd;
+
+      const newContent = content.substring(0, start) + clipboardText + content.substring(end);
+      setContent(newContent);
+      addToHistory(newContent);
+      setIsModified(true);
+
+      setTimeout(() => {
+        const newPos = start + clipboardText.length;
+        textarea.setSelectionRange(newPos, newPos);
+        textarea.focus();
+      }, 0);
+    } catch (e) {
+      showMessageBox?.('Unable to access clipboard.', 'warning', 'Paste');
+    }
+  }, [content, addToHistory, showMessageBox]);
+
+  // Delete
+  const handleDelete = useCallback(() => {
+    const textarea = textareaRef.current;
+    if (!textarea) return;
+
+    const start = textarea.selectionStart;
+    const end = textarea.selectionEnd;
+
+    let newContent;
+    if (start === end) {
+      // 선택 없으면 다음 문자 삭제
+      newContent = content.substring(0, start) + content.substring(start + 1);
+    } else {
+      newContent = content.substring(0, start) + content.substring(end);
+    }
+
+    setContent(newContent);
+    addToHistory(newContent);
+    setIsModified(true);
+
+    setTimeout(() => {
+      textarea.setSelectionRange(start, start);
+      textarea.focus();
+    }, 0);
+  }, [content, addToHistory]);
+
   const handleNew = async () => {
     if (isModified && showConfirm) {
       const save = await showConfirm(
-        `Do you want to save changes to ${fileName}?`,
-        {
-          title: 'Notepad',
-          buttonType: 'yesnocancel'
-        }
+        `Do you want to save changes to ${currentFileName}?`,
+        { title: 'Notepad', buttonType: 'yesnocancel' }
       );
-      if (save === null) return; // Cancelled
+      if (save === null) return;
+      if (save) handleSave();
     }
 
     setContent('');
+    setCurrentFileName('Untitled');
     setIsModified(false);
+    setUndoHistory(['']);
+    setHistoryIndex(0);
   };
 
-  const handleSave = () => {
-    if (showMessageBox) {
-      showMessageBox(
-        `File "${fileName}" has been saved.\n\n(Feature not fully implemented)`,
-        'info',
-        'Save'
-      );
+  // Open
+  const handleOpen = async () => {
+    if (!showInput) return;
+
+    // localStorage에서 저장된 파일 목록 가져오기
+    const savedFiles = JSON.parse(localStorage.getItem(NOTEPAD_STORAGE_KEY) || '{}');
+    const fileNames = Object.keys(savedFiles);
+
+    if (fileNames.length === 0) {
+      showMessageBox?.('No saved files found.', 'info', 'Open');
+      return;
     }
-    setIsModified(false);
+
+    const selectedFile = await showInput(
+      `Available files:\n${fileNames.join(', ')}\n\nEnter file name to open:`,
+      { title: 'Open', placeholder: 'filename.txt' }
+    );
+
+    if (selectedFile && savedFiles[selectedFile]) {
+      if (isModified) {
+        const save = await showConfirm?.(
+          `Do you want to save changes to ${currentFileName}?`,
+          { title: 'Notepad', buttonType: 'yesnocancel' }
+        );
+        if (save === null) return;
+        if (save) handleSave();
+      }
+
+      setContent(savedFiles[selectedFile]);
+      setCurrentFileName(selectedFile);
+      setIsModified(false);
+      setUndoHistory([savedFiles[selectedFile]]);
+      setHistoryIndex(0);
+    } else if (selectedFile) {
+      showMessageBox?.(`File "${selectedFile}" not found.`, 'warning', 'Open');
+    }
   };
 
-  const handleFind = async () => {
-    if (showInput) {
-      const searchText = await showInput('Find what:', {
-        title: 'Find',
-        placeholder: 'Enter text to find'
-      });
+  // Save
+  const handleSave = useCallback(() => {
+    const savedFiles = JSON.parse(localStorage.getItem(NOTEPAD_STORAGE_KEY) || '{}');
+    savedFiles[currentFileName] = content;
+    localStorage.setItem(NOTEPAD_STORAGE_KEY, JSON.stringify(savedFiles));
+    setIsModified(false);
+    showMessageBox?.(`File "${currentFileName}" has been saved.`, 'info', 'Save');
+  }, [currentFileName, content, showMessageBox]);
 
-      if (searchText) {
-        const index = content.toLowerCase().indexOf(searchText.toLowerCase());
-        if (index !== -1) {
-          textareaRef.current.setSelectionRange(index, index + searchText.length);
-          textareaRef.current.focus();
-        } else if (showMessageBox) {
-          showMessageBox(
-            `Cannot find "${searchText}"`,
-            'info',
-            'Notepad'
-          );
-        }
+  // Save As
+  const handleSaveAs = async () => {
+    if (!showInput) return;
+
+    const newFileName = await showInput('Save as:', {
+      title: 'Save As',
+      placeholder: 'filename.txt',
+      defaultValue: currentFileName
+    });
+
+    if (newFileName) {
+      const savedFiles = JSON.parse(localStorage.getItem(NOTEPAD_STORAGE_KEY) || '{}');
+      savedFiles[newFileName] = content;
+      localStorage.setItem(NOTEPAD_STORAGE_KEY, JSON.stringify(savedFiles));
+      setCurrentFileName(newFileName);
+      setIsModified(false);
+      showMessageBox?.(`File "${newFileName}" has been saved.`, 'info', 'Save As');
+    }
+  };
+
+  // Find
+  const handleFind = async () => {
+    if (!showInput) return;
+
+    const searchText = await showInput('Find what:', {
+      title: 'Find',
+      placeholder: 'Enter text to find',
+      defaultValue: lastSearchText
+    });
+
+    if (searchText) {
+      setLastSearchText(searchText);
+      const index = content.toLowerCase().indexOf(searchText.toLowerCase());
+      if (index !== -1) {
+        setLastSearchIndex(index);
+        textareaRef.current?.setSelectionRange(index, index + searchText.length);
+        textareaRef.current?.focus();
+      } else {
+        setLastSearchIndex(-1);
+        showMessageBox?.(`Cannot find "${searchText}"`, 'info', 'Notepad');
+      }
+    }
+  };
+
+  // Find Next
+  const handleFindNext = useCallback(() => {
+    if (!lastSearchText) {
+      handleFind();
+      return;
+    }
+
+    const startIndex = lastSearchIndex >= 0 ? lastSearchIndex + 1 : 0;
+    const index = content.toLowerCase().indexOf(lastSearchText.toLowerCase(), startIndex);
+
+    if (index !== -1) {
+      setLastSearchIndex(index);
+      textareaRef.current?.setSelectionRange(index, index + lastSearchText.length);
+      textareaRef.current?.focus();
+    } else {
+      // 처음부터 다시 검색
+      const firstIndex = content.toLowerCase().indexOf(lastSearchText.toLowerCase());
+      if (firstIndex !== -1 && firstIndex !== lastSearchIndex) {
+        setLastSearchIndex(firstIndex);
+        textareaRef.current?.setSelectionRange(firstIndex, firstIndex + lastSearchText.length);
+        textareaRef.current?.focus();
+      } else {
+        showMessageBox?.(`Cannot find "${lastSearchText}"`, 'info', 'Find Next');
+      }
+    }
+  }, [lastSearchText, lastSearchIndex, content, showMessageBox]);
+
+  // Replace
+  const handleReplace = async () => {
+    if (!showInput) return;
+
+    const findText = await showInput('Find what:', {
+      title: 'Replace',
+      placeholder: 'Text to find',
+      defaultValue: lastSearchText
+    });
+
+    if (!findText) return;
+    setLastSearchText(findText);
+
+    const replaceText = await showInput('Replace with:', {
+      title: 'Replace',
+      placeholder: 'Replacement text'
+    });
+
+    if (replaceText === null) return;
+
+    // 현재 선택 영역이 찾는 텍스트와 일치하면 바꾸기
+    const textarea = textareaRef.current;
+    const start = textarea?.selectionStart || 0;
+    const end = textarea?.selectionEnd || 0;
+    const selectedText = content.substring(start, end);
+
+    if (selectedText.toLowerCase() === findText.toLowerCase()) {
+      const newContent = content.substring(0, start) + replaceText + content.substring(end);
+      setContent(newContent);
+      addToHistory(newContent);
+      setIsModified(true);
+
+      setTimeout(() => {
+        textarea?.setSelectionRange(start, start + replaceText.length);
+        textarea?.focus();
+      }, 0);
+    }
+
+    // 다음 일치 항목 찾기
+    handleFindNext();
+  };
+
+  // Font 변경
+  const handleFont = async () => {
+    if (!showInput) return;
+
+    const fonts = [
+      'Consolas, monospace',
+      'Courier New, monospace',
+      'Arial, sans-serif',
+      'Times New Roman, serif',
+      'Verdana, sans-serif'
+    ];
+
+    const sizeInput = await showInput(
+      `Current font size: ${fontSize}\nEnter new font size (8-72):`,
+      { title: 'Font', placeholder: '13', defaultValue: String(fontSize) }
+    );
+
+    if (sizeInput) {
+      const newSize = parseInt(sizeInput);
+      if (newSize >= 8 && newSize <= 72) {
+        setFontSize(newSize);
       }
     }
   };
 
   const handleAbout = () => {
-    if (showMessageBox) {
-      showMessageBox(
-        'Notepad\nVersion 1.0\n\nA simple text editor built with React.\n\n© 2025 OnePaperHoon',
-        'info',
-        'About Notepad'
-      );
-    }
+    showMessageBox?.(
+      'Notepad\nVersion 2.0\n\nA text editor with Undo/Redo, Find/Replace, and file management.\n\n© 2025 OnePaperHoon',
+      'info',
+      'About Notepad'
+    );
   };
+
+  const canUndo = historyIndex > 0;
+  const canRedo = historyIndex < undoHistory.length - 1;
 
   const menuItems = {
     File: [
       { label: 'New', shortcut: 'Ctrl+N', action: handleNew },
       { separator: true },
-      { label: 'Open...', shortcut: 'Ctrl+O', disabled: true },
+      { label: 'Open...', shortcut: 'Ctrl+O', action: handleOpen },
       { label: 'Save', shortcut: 'Ctrl+S', action: handleSave },
-      { label: 'Save As...', disabled: true },
+      { label: 'Save As...', action: handleSaveAs },
       { separator: true },
       { label: 'Page Setup...', disabled: true },
       { label: 'Print...', shortcut: 'Ctrl+P', disabled: true },
@@ -122,16 +415,17 @@ const Notepad = ({
       { label: 'Exit', action: onClose }
     ],
     Edit: [
-      { label: 'Undo', shortcut: 'Ctrl+Z', disabled: true },
+      { label: 'Undo', shortcut: 'Ctrl+Z', action: handleUndo, disabled: !canUndo },
+      { label: 'Redo', shortcut: 'Ctrl+Y', action: handleRedo, disabled: !canRedo },
       { separator: true },
-      { label: 'Cut', shortcut: 'Ctrl+X', disabled: true },
-      { label: 'Copy', shortcut: 'Ctrl+C', disabled: true },
-      { label: 'Paste', shortcut: 'Ctrl+V', disabled: true },
-      { label: 'Delete', shortcut: 'Del', disabled: true },
+      { label: 'Cut', shortcut: 'Ctrl+X', action: handleCut },
+      { label: 'Copy', shortcut: 'Ctrl+C', action: handleCopy },
+      { label: 'Paste', shortcut: 'Ctrl+V', action: handlePaste },
+      { label: 'Delete', shortcut: 'Del', action: handleDelete },
       { separator: true },
       { label: 'Find...', shortcut: 'Ctrl+F', action: handleFind },
-      { label: 'Find Next', shortcut: 'F3', disabled: true },
-      { label: 'Replace...', shortcut: 'Ctrl+H', disabled: true },
+      { label: 'Find Next', shortcut: 'F3', action: handleFindNext },
+      { label: 'Replace...', shortcut: 'Ctrl+H', action: handleReplace },
       { separator: true },
       { label: 'Select All', shortcut: 'Ctrl+A', action: () => textareaRef.current?.select() }
     ],
@@ -140,7 +434,7 @@ const Notepad = ({
         label: wordWrap ? '✓ Word Wrap' : 'Word Wrap',
         action: () => setWordWrap(!wordWrap)
       },
-      { label: 'Font...', disabled: true }
+      { label: 'Font...', action: handleFont }
     ],
     View: [
       {
@@ -155,7 +449,7 @@ const Notepad = ({
       }
     ],
     Help: [
-      { label: 'Help Topics', disabled: true },
+      { label: 'Help Topics', action: () => showMessageBox?.('Keyboard shortcuts:\n\nCtrl+Z: Undo\nCtrl+Y: Redo\nCtrl+X: Cut\nCtrl+C: Copy\nCtrl+V: Paste\nCtrl+F: Find\nF3: Find Next\nCtrl+H: Replace\nCtrl+S: Save\nCtrl+M: Markdown Preview', 'info', 'Help') },
       { separator: true },
       { label: 'About Notepad', action: handleAbout }
     ]
@@ -166,7 +460,7 @@ const Notepad = ({
   };
 
   const handleMenuItemClick = (item) => {
-    if (item.action) {
+    if (item.action && !item.disabled) {
       item.action();
     }
     setActiveMenu(null);
@@ -176,35 +470,59 @@ const Notepad = ({
   useEffect(() => {
     const handleKeyDown = (e) => {
       if (e.ctrlKey) {
-        if (e.key === 's') {
-          e.preventDefault();
-          handleSave();
-        } else if (e.key === 'n') {
-          e.preventDefault();
-          handleNew();
-        } else if (e.key === 'f') {
-          e.preventDefault();
-          handleFind();
-        } else if (e.key === 'm') {
-          e.preventDefault();
-          setPreviewMode(prev => !prev);
+        switch (e.key.toLowerCase()) {
+          case 's':
+            e.preventDefault();
+            handleSave();
+            break;
+          case 'n':
+            e.preventDefault();
+            handleNew();
+            break;
+          case 'o':
+            e.preventDefault();
+            handleOpen();
+            break;
+          case 'f':
+            e.preventDefault();
+            handleFind();
+            break;
+          case 'h':
+            e.preventDefault();
+            handleReplace();
+            break;
+          case 'z':
+            e.preventDefault();
+            handleUndo();
+            break;
+          case 'y':
+            e.preventDefault();
+            handleRedo();
+            break;
+          case 'm':
+            e.preventDefault();
+            setPreviewMode(prev => !prev);
+            break;
         }
+      } else if (e.key === 'F3') {
+        e.preventDefault();
+        handleFindNext();
       }
     };
 
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [isModified, content]);
+  }, [handleSave, handleUndo, handleRedo, handleFindNext]);
 
   return (
-    <div style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+    <div style={{ height: '100%', display: 'flex', flexDirection: 'column' }} onClick={() => setActiveMenu(null)}>
       {/* 메뉴 바 */}
       <div style={{
         display: 'flex',
         backgroundColor: '#c0c0c0',
         borderBottom: '2px solid #808080',
         position: 'relative'
-      }}>
+      }} onClick={(e) => e.stopPropagation()}>
         {Object.keys(menuItems).map(menuName => (
           <div key={menuName} style={{ position: 'relative' }}>
             <div
@@ -221,16 +539,8 @@ const Notepad = ({
               {menuName}
             </div>
 
-            {/* 드롭다운 메뉴 */}
             {activeMenu === menuName && (
-              <div
-                style={{
-                  position: 'absolute',
-                  top: '100%',
-                  left: 0,
-                  zIndex: 1000
-                }}
-              >
+              <div style={{ position: 'absolute', top: '100%', left: 0, zIndex: 1000 }}>
                 <MenuList style={{ minWidth: '200px' }}>
                   {menuItems[menuName].map((item, index) => {
                     if (item.separator) {
@@ -318,8 +628,8 @@ const Notepad = ({
             border: 'none',
             outline: 'none',
             resize: 'none',
-            fontFamily: 'Consolas, "Courier New", monospace',
-            fontSize: '13px',
+            fontFamily: fontFamily,
+            fontSize: `${fontSize}px`,
             lineHeight: '1.4',
             whiteSpace: wordWrap ? 'pre-wrap' : 'pre',
             overflowWrap: wordWrap ? 'break-word' : 'normal',
@@ -339,7 +649,7 @@ const Notepad = ({
           justifyContent: 'space-between'
         }}>
           <span>
-            {previewMode ? '📖 Preview Mode' : (isModified ? 'Modified' : 'Saved')}
+            {previewMode ? '📖 Preview Mode' : (isModified ? `Modified - ${currentFileName}` : currentFileName)}
           </span>
           <span>
             {previewMode ? 'Ctrl+M to edit' : `Ln ${cursorPosition.line}, Col ${cursorPosition.col}`}

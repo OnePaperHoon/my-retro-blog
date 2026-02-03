@@ -1,8 +1,9 @@
-import { useRef, useState, useCallback } from 'react';
+import { useRef, useState, useCallback, useEffect } from 'react';
 import { Window as Win95Window, WindowContent } from 'react95';
 import Draggable from 'react-draggable';
 import TitleBar from './TitleBar';
 import ResizeHandle from './ResizeHandle';
+import soundManager from '../../utils/sounds';
 
 const Window = ({
   window,
@@ -11,43 +12,62 @@ const Window = ({
   onFocus,
   onMinimize,
   onMaximize,
-  onResize
+  onResize,
+  onPositionChange
 }) => {
   const nodeRef = useRef(null);
   const [currentSize, setCurrentSize] = useState({
     width: window.width || 400,
     height: window.height || 300
   });
-  const [currentPosition, setCurrentPosition] = useState({
-    x: window.x || 0,
-    y: window.y || 0
-  });
 
   const isMaximized = window.state === 'maximized';
   const isMinimized = window.state === 'minimized';
+
+  // Alt+F4로 창 닫기
+  useEffect(() => {
+    if (!isFocused) return;
+
+    const handleKeyDown = (e) => {
+      if (e.altKey && e.key === 'F4') {
+        e.preventDefault();
+        soundManager.windowClose();
+        onClose();
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [isFocused, onClose]);
+
+  // 드래그 완료 핸들러 - 부모에게 위치 저장
+  const handleDragStop = useCallback((e, data) => {
+    if (onPositionChange) {
+      onPositionChange(window.id, { x: data.x, y: data.y });
+    }
+  }, [window.id, onPositionChange]);
 
   // 리사이즈 핸들러
   const handleResize = useCallback(({ width, height, deltaX, deltaY }) => {
     setCurrentSize({ width, height });
 
     // 위쪽이나 왼쪽으로 리사이즈할 때 위치도 조정
-    if (deltaX !== 0 || deltaY !== 0) {
-      setCurrentPosition(prev => ({
-        x: prev.x + deltaX,
-        y: prev.y + deltaY
-      }));
-    }
-
-    // 부모 컴포넌트에 크기 및 위치 변경 알림
     if (onResize) {
       onResize(window.id, {
         width,
         height,
-        x: currentPosition.x + deltaX,
-        y: currentPosition.y + deltaY
+        x: (window.x || 0) + deltaX,
+        y: (window.y || 0) + deltaY
       });
     }
-  }, [window.id, onResize, currentPosition]);
+
+    if (onPositionChange && (deltaX !== 0 || deltaY !== 0)) {
+      onPositionChange(window.id, {
+        x: (window.x || 0) + deltaX,
+        y: (window.y || 0) + deltaY
+      });
+    }
+  }, [window.id, window.x, window.y, onResize, onPositionChange]);
 
   if (isMinimized) {
     return null; // 최소화된 창은 렌더링하지 않음
@@ -63,9 +83,9 @@ const Window = ({
         zIndex: isFocused ? 100 : 10,
       }
     : {
-        position: 'absolute',
-        left: currentPosition.x,
-        top: currentPosition.y,
+        position: 'fixed',
+        left: 0,
+        top: 0,
         width: `${currentSize.width}px`,
         height: `${currentSize.height}px`,
         zIndex: isFocused ? 100 : 10,
@@ -121,7 +141,12 @@ const Window = ({
   }
 
   return (
-    <Draggable nodeRef={nodeRef} handle=".window-header">
+    <Draggable
+      nodeRef={nodeRef}
+      handle=".window-header"
+      position={{ x: window.x || 0, y: window.y || 0 }}
+      onStop={handleDragStop}
+    >
       {content}
     </Draggable>
   );

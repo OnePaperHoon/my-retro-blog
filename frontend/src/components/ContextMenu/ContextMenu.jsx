@@ -116,6 +116,7 @@ const ContextMenu = ({ x, y, items, onClose }) => {
         {/* 하위 메뉴 렌더링 */}
         {hasSubmenu && isSubmenuOpen && (
           <div
+            className="context-menu-submenu"
             style={{
               position: 'absolute',
               left: '100%',
@@ -135,6 +136,7 @@ const ContextMenu = ({ x, y, items, onClose }) => {
   return (
     <div
       ref={menuRef}
+      className="context-menu"
       style={{
         position: 'fixed',
         left: `${position.x}px`,

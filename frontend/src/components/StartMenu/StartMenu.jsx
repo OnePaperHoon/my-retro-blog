@@ -185,6 +185,7 @@ const StartMenu = ({ isOpen, onClose, onOpenWindow, onShowShutDown, showMessageB
 
   return (
     <MenuList
+      className="start-menu"
       style={{
         position: 'absolute',
         left: '0',

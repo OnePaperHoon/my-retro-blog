@@ -7,7 +7,23 @@ import ContextMenu from '../ContextMenu/ContextMenu';
 import Notepad from '../Notepad/Notepad';
 import useContextMenu from '../../hooks/useContextMenu';
 
-const Taskbar = ({ windows, focusedWindow, onFocusWindow, onRestoreWindow, onOpenWindow, onShowShutDown, showMessageBox, showConfirm, showInput, systemSettings, onSystemSettingsChange }) => {
+const Taskbar = ({
+  windows,
+  focusedWindow,
+  onFocusWindow,
+  onRestoreWindow,
+  onOpenWindow,
+  onShowShutDown,
+  showMessageBox,
+  showConfirm,
+  showInput,
+  systemSettings,
+  onSystemSettingsChange,
+  onCascadeWindows,
+  onTileWindowsHorizontally,
+  onTileWindowsVertically,
+  onMinimizeAll
+}) => {
   const [isStartOpen, setIsStartOpen] = useState(false);
   const { contextMenu, showContextMenu, hideContextMenu } = useContextMenu();
 
@@ -25,6 +41,8 @@ const Taskbar = ({ windows, focusedWindow, onFocusWindow, onRestoreWindow, onOpe
   };
 
   const handleTaskbarContextMenu = (e) => {
+    const hasWindows = windows.length > 0;
+
     const menuItems = [
       {
         id: 'toolbars',
@@ -40,28 +58,26 @@ const Taskbar = ({ windows, focusedWindow, onFocusWindow, onRestoreWindow, onOpe
       {
         id: 'cascade',
         label: 'Cascade Windows',
-        action: () => console.log('Cascade windows')
+        disabled: !hasWindows,
+        action: onCascadeWindows
       },
       {
         id: 'tile-h',
         label: 'Tile Windows Horizontally',
-        action: () => console.log('Tile horizontally')
+        disabled: !hasWindows,
+        action: onTileWindowsHorizontally
       },
       {
         id: 'tile-v',
         label: 'Tile Windows Vertically',
-        action: () => console.log('Tile vertically')
+        disabled: !hasWindows,
+        action: onTileWindowsVertically
       },
       {
         id: 'minimize-all',
         label: 'Minimize All Windows',
-        action: () => {
-          windows.forEach(w => {
-            if (w.state !== 'minimized') {
-              onRestoreWindow(w.id); // 실제로는 minimizeWindow를 호출해야 함
-            }
-          });
-        }
+        disabled: !hasWindows,
+        action: onMinimizeAll
       },
       { separator: true },
       {

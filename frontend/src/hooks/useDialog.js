@@ -80,6 +80,48 @@ const useDialog = () => {
     });
   };
 
+  const showProgress = (options = {}) => {
+    const {
+      title = 'Progress',
+      message = 'Please wait...',
+      progress = -1, // -1 for indeterminate
+      showCancel = false,
+      onCancel = null
+    } = options;
+
+    setDialog({
+      type: 'progress',
+      props: {
+        title,
+        message,
+        progress,
+        showCancel,
+        onCancel: () => {
+          setDialog(null);
+          if (onCancel) onCancel();
+        },
+        onComplete: () => {
+          setDialog(null);
+        }
+      }
+    });
+
+    // Return control functions
+    return {
+      updateProgress: (newProgress, newMessage) => {
+        setDialog(prev => prev ? {
+          ...prev,
+          props: {
+            ...prev.props,
+            progress: newProgress,
+            message: newMessage !== undefined ? newMessage : prev.props.message
+          }
+        } : null);
+      },
+      close: () => setDialog(null)
+    };
+  };
+
   const closeDialog = () => {
     setDialog(null);
   };
@@ -89,6 +131,7 @@ const useDialog = () => {
     showMessageBox,
     showConfirm,
     showInput,
+    showProgress,
     closeDialog
   };
 };

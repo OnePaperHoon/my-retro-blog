@@ -2,18 +2,27 @@ import { WindowHeader, Button } from 'react95';
 import soundManager from '../../utils/sounds';
 
 const TitleBar = ({ title, isFocused, onMinimize, onMaximize, onClose, isMaximized }) => {
+  // 타이틀바 더블클릭으로 최대화/복원
+  const handleDoubleClick = (e) => {
+    e.preventDefault();
+    soundManager.maximize();
+    onMaximize();
+  };
+
   return (
     <WindowHeader
       className="window-header"
+      onDoubleClick={handleDoubleClick}
       style={{
         display: 'flex',
         justifyContent: 'space-between',
         alignItems: 'center',
         backgroundColor: isFocused ? '#000080' : '#808080',
-        color: '#fff'
+        color: '#fff',
+        cursor: 'default'
       }}
     >
-      <span style={{ fontWeight: 'bold' }}>{title}</span>
+      <span style={{ fontWeight: 'bold', userSelect: 'none' }}>{title}</span>
       <div style={{ display: 'flex', gap: '2px' }}>
         <Button
           size="sm"

@@ -40,7 +40,15 @@ const DisplaySettings = ({ settings, onSettingsChange, onClose }) => {
     { id: 'blue', name: 'Blue', color: '#000080' },
     { id: 'forest', name: 'Forest', color: '#254117' },
     { id: 'purple', name: 'Purple', color: '#4B0082' },
-    { id: 'black', name: 'Black', color: '#000000' }
+    { id: 'black', name: 'Black', color: '#000000' },
+    { id: 'gray', name: 'Gray', color: '#808080' }
+  ];
+
+  const wallpapers = [
+    { id: 'none', name: '(None)', url: null },
+    { id: 'clouds', name: 'Clouds', url: 'https://i.imgur.com/7QJwNqL.jpg' },
+    { id: 'bliss', name: 'Bliss', url: 'https://i.imgur.com/2oZklXn.jpg' },
+    { id: 'matrix', name: 'Matrix', url: 'https://i.imgur.com/JgYD2nQ.jpg' }
   ];
 
   return (
@@ -57,20 +65,38 @@ const DisplaySettings = ({ settings, onSettingsChange, onClose }) => {
               key={bg.id}
               onClick={() => {
                 soundManager.click();
-                onSettingsChange({ ...settings, backgroundColor: bg.color });
+                onSettingsChange({ ...settings, backgroundColor: bg.color, backgroundImage: null });
               }}
               style={{
                 width: '40px',
                 height: '40px',
                 backgroundColor: bg.color,
-                border: settings.backgroundColor === bg.color ? '3px solid #000' : '1px solid #808080',
-                cursor: 'pointer',
-                title: bg.name
+                border: settings.backgroundColor === bg.color && !settings.backgroundImage ? '3px solid #000' : '1px solid #808080',
+                cursor: 'pointer'
               }}
               title={bg.name}
             />
           ))}
         </div>
+      </div>
+
+      <div style={{ marginBottom: '16px' }}>
+        <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold', fontSize: '12px' }}>
+          Wallpaper:
+        </label>
+        <select
+          value={settings.backgroundImage || 'none'}
+          onChange={(e) => {
+            soundManager.click();
+            const selected = wallpapers.find(w => w.id === e.target.value);
+            onSettingsChange({ ...settings, backgroundImage: selected?.url || null });
+          }}
+          style={{ width: '100%', padding: '4px', fontSize: '12px' }}
+        >
+          {wallpapers.map(wp => (
+            <option key={wp.id} value={wp.id}>{wp.name}</option>
+          ))}
+        </select>
       </div>
 
       <div style={{ textAlign: 'right', marginTop: '16px' }}>

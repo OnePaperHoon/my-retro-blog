@@ -20,15 +20,16 @@ const DesktopIcon = ({ name, iconUrl, onDoubleClick, selected, onSelect, onConte
       onStart={(e) => {
         // 드래그 시작 시 선택
         e.stopPropagation();
-        onSelect();
+        onSelect(e);
       }}
     >
       <div
         ref={nodeRef}
+        className="desktop-icon"
         onClick={(e) => {
           e.stopPropagation();
           soundManager.select();
-          onSelect();
+          onSelect(e);
         }}
         onDoubleClick={(e) => {
           e.stopPropagation();

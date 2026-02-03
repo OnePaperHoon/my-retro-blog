@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import styled from 'styled-components';
 import { Button, TextInput } from 'react95';
+import ReactMarkdown from 'react-markdown';
 import { postsAPI } from '../../services/api';
 import { useAuth } from '../../contexts/AuthContext';
 
@@ -114,14 +115,82 @@ const PostView = styled.div`
 
 const PostContent = styled.div`
   line-height: 1.6;
-  white-space: pre-wrap;
 
-  h1, h2, h3 { margin: 16px 0 8px 0; }
-  p { margin: 8px 0; }
+  h1 { font-size: 24px; margin: 20px 0 12px 0; border-bottom: 1px solid #ccc; padding-bottom: 8px; }
+  h2 { font-size: 20px; margin: 18px 0 10px 0; }
+  h3 { font-size: 16px; margin: 16px 0 8px 0; }
+  p { margin: 10px 0; }
+
   code {
-    background: #f0f0f0;
+    background: #f4f4f4;
     padding: 2px 6px;
-    font-family: monospace;
+    font-family: 'Courier New', Consolas, monospace;
+    font-size: 13px;
+    border-radius: 3px;
+  }
+
+  pre {
+    background: #1e1e1e;
+    color: #d4d4d4;
+    padding: 12px;
+    border-radius: 4px;
+    overflow-x: auto;
+    margin: 12px 0;
+
+    code {
+      background: transparent;
+      padding: 0;
+      color: inherit;
+    }
+  }
+
+  blockquote {
+    border-left: 4px solid #000080;
+    margin: 12px 0;
+    padding: 8px 16px;
+    background: #f0f0f0;
+    color: #333;
+  }
+
+  ul, ol {
+    margin: 10px 0;
+    padding-left: 24px;
+  }
+
+  li { margin: 4px 0; }
+
+  a {
+    color: #000080;
+    text-decoration: underline;
+  }
+
+  img {
+    max-width: 100%;
+    height: auto;
+    margin: 12px 0;
+  }
+
+  table {
+    border-collapse: collapse;
+    width: 100%;
+    margin: 12px 0;
+  }
+
+  th, td {
+    border: 1px solid #ccc;
+    padding: 8px;
+    text-align: left;
+  }
+
+  th {
+    background: #f0f0f0;
+    font-weight: bold;
+  }
+
+  hr {
+    border: none;
+    border-top: 1px solid #ccc;
+    margin: 16px 0;
   }
 `;
 
@@ -558,7 +627,9 @@ const Blog = ({ showMessageBox, showConfirm, showInput }) => {
                     <span> | Tags: {selectedPost.tags.join(', ')}</span>
                   )}
                 </PostMeta>
-                <PostContent>{selectedPost.content}</PostContent>
+                <PostContent>
+                  <ReactMarkdown>{selectedPost.content}</ReactMarkdown>
+                </PostContent>
               </>
             ) : (
               <EmptyState>Select a post to read</EmptyState>

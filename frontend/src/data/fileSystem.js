@@ -1,11 +1,45 @@
 // 가상 파일 시스템 - 포트폴리오 프로젝트 구조
 
+// Desktop 폴더 (localStorage와 연동)
+const DESKTOP_FOLDERS_KEY = 'desktop_folders';
+
+export const getDesktopFolders = () => {
+  try {
+    const saved = localStorage.getItem(DESKTOP_FOLDERS_KEY);
+    if (saved) {
+      return JSON.parse(saved);
+    }
+  } catch (e) {
+    console.error('Failed to load desktop folders:', e);
+  }
+  return [];
+};
+
+export const saveDesktopFolder = (folder) => {
+  const folders = getDesktopFolders();
+  folders.push(folder);
+  localStorage.setItem(DESKTOP_FOLDERS_KEY, JSON.stringify(folders));
+};
+
+export const removeDesktopFolder = (folderId) => {
+  const folders = getDesktopFolders().filter(f => f.id !== folderId);
+  localStorage.setItem(DESKTOP_FOLDERS_KEY, JSON.stringify(folders));
+};
+
 export const fileSystem = {
   id: 'root',
   name: 'My Computer',
   type: 'folder',
   path: 'C:',
   children: [
+    {
+      id: 'desktop',
+      name: 'Desktop',
+      type: 'folder',
+      path: 'C:\\Desktop',
+      icon: '🖥️',
+      children: [] // 동적으로 Desktop 아이콘에서 로드
+    },
     {
       id: 'my-documents',
       name: 'My Documents',
